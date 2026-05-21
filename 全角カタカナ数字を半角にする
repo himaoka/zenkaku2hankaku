@@ -1,0 +1,110 @@
+public with sharing class ZenkakuToHankakuInvocable {
+
+    public class Request {
+        @InvocableVariable(required=true label='Input Text')
+        public String inputText;
+    }
+
+    public class Response {
+        @InvocableVariable(label='Converted Text')
+        public String outputText;
+    }
+
+    @InvocableMethod(
+        label='Convert Full-width to Half-width'
+        description='Converts full-width alphanumerics, symbols, spaces, and Katakana to half-width.'
+    )
+    public static List<Response> convert(List<Request> requests) {
+        List<Response> results = new List<Response>();
+        for (Request req : requests) {
+            Response res = new Response();
+            res.outputText = normalize(req == null ? null : req.inputText);
+            results.add(res);
+        }
+        return results;
+    }
+
+    private static final String FW_ASCII =
+        '！＂＃＄％＆＇（）＊＋，－．／' +
+        '０１２３４５６７８９' +
+        '：；＜＝＞？＠' +
+        'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ' +
+        '［＼］＾＿｀' +
+        'ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ' +
+        '｛｜｝～';
+
+    private static final String HW_ASCII =
+        '!"#$%&\'()*+,-./' +
+        '0123456789' +
+        ':;<=>?@' +
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+        '[\\]^_`' +
+        'abcdefghijklmnopqrstuvwxyz' +
+        '{|}~';
+
+    private static final Map<String, String> KANA_MAP = initKanaMap();
+
+    @TestVisible
+    private static String normalize(String input) {
+        if (input == null) return null;
+
+        List<String> chars = new List<String>();
+
+        for (Integer i = 0; i < input.length(); i++) {
+            String ch = input.substring(i, i + 1);
+
+            if (ch == '　') { chars.add(' '); continue; }
+
+            Integer idx = FW_ASCII.indexOf(ch);
+            if (idx >= 0) {
+                chars.add(HW_ASCII.substring(idx, idx + 1));
+                continue;
+            }
+
+            chars.add(KANA_MAP.containsKey(ch) ? KANA_MAP.get(ch) : ch);
+        }
+
+        return String.join(chars, '');
+    }
+
+    private static Map<String, String> initKanaMap() {
+        Map<String, String> m = new Map<String, String>();
+        m.put('。','｡'); m.put('、','､'); m.put('・','･');
+        m.put('「','｢'); m.put('」','｣'); m.put('ー','ｰ');
+        m.put('゛','ﾞ'); m.put('゜','ﾟ');
+        m.put('ァ','ｧ'); m.put('ィ','ｨ'); m.put('ゥ','ｩ');
+        m.put('ェ','ｪ'); m.put('ォ','ｫ'); m.put('ャ','ｬ');
+        m.put('ュ','ｭ'); m.put('ョ','ｮ'); m.put('ッ','ｯ');
+        m.put('ア','ｱ'); m.put('イ','ｲ'); m.put('ウ','ｳ');
+        m.put('エ','ｴ'); m.put('オ','ｵ');
+        m.put('カ','ｶ'); m.put('キ','ｷ'); m.put('ク','ｸ');
+        m.put('ケ','ｹ'); m.put('コ','ｺ');
+        m.put('サ','ｻ'); m.put('シ','ｼ'); m.put('ス','ｽ');
+        m.put('セ','ｾ'); m.put('ソ','ｿ');
+        m.put('タ','ﾀ'); m.put('チ','ﾁ'); m.put('ツ','ﾂ');
+        m.put('テ','ﾃ'); m.put('ト','ﾄ');
+        m.put('ナ','ﾅ'); m.put('ニ','ﾆ'); m.put('ヌ','ﾇ');
+        m.put('ネ','ﾈ'); m.put('ノ','ﾉ');
+        m.put('ハ','ﾊ'); m.put('ヒ','ﾋ'); m.put('フ','ﾌ');
+        m.put('ヘ','ﾍ'); m.put('ホ','ﾎ');
+        m.put('マ','ﾏ'); m.put('ミ','ﾐ'); m.put('ム','ﾑ');
+        m.put('メ','ﾒ'); m.put('モ','ﾓ');
+        m.put('ヤ','ﾔ'); m.put('ユ','ﾕ'); m.put('ヨ','ﾖ');
+        m.put('ラ','ﾗ'); m.put('リ','ﾘ'); m.put('ル','ﾙ');
+        m.put('レ','ﾚ'); m.put('ロ','ﾛ');
+        m.put('ワ','ﾜ'); m.put('ヲ','ｦ'); m.put('ン','ﾝ');
+        m.put('ヮ','ﾜ'); m.put('ヵ','ｶ'); m.put('ヶ','ｹ');
+        m.put('ガ','ｶﾞ'); m.put('ギ','ｷﾞ'); m.put('グ','ｸﾞ');
+        m.put('ゲ','ｹﾞ'); m.put('ゴ','ｺﾞ');
+        m.put('ザ','ｻﾞ'); m.put('ジ','ｼﾞ'); m.put('ズ','ｽﾞ');
+        m.put('ゼ','ｾﾞ'); m.put('ゾ','ｿﾞ');
+        m.put('ダ','ﾀﾞ'); m.put('ヂ','ﾁﾞ'); m.put('ヅ','ﾂﾞ');
+        m.put('デ','ﾃﾞ'); m.put('ド','ﾄﾞ');
+        m.put('バ','ﾊﾞ'); m.put('ビ','ﾋﾞ'); m.put('ブ','ﾌﾞ');
+        m.put('ベ','ﾍﾞ'); m.put('ボ','ﾎﾞ');
+        m.put('パ','ﾊﾟ'); m.put('ピ','ﾋﾟ'); m.put('プ','ﾌﾟ');
+        m.put('ペ','ﾍﾟ'); m.put('ポ','ﾎﾟ');
+        m.put('ヴ','ｳﾞ');
+        return m;
+    }
+}
