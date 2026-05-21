@@ -1,0 +1,39 @@
+@IsTest
+private class ZenkakuToHankakuInvocableTest {
+
+    @IsTest
+    static void testConvert_MixedCharacters() {
+        ZenkakuToHankakuInvocable.Request req = new ZenkakuToHankakuInvocable.Request();
+        req.inputText = 'ＡＢＣ１２３　！＠＃　ガギグ　パピプ　ヴァイオリン';
+        List<ZenkakuToHankakuInvocable.Response> results =
+            ZenkakuToHankakuInvocable.convert(new List<ZenkakuToHankakuInvocable.Request>{ req });
+        System.assertEquals('ABC123 !@# ｶﾞｷﾞｸﾞ ﾊﾟﾋﾟﾌﾟ ｳﾞｧｲｵﾘﾝ', results[0].outputText);
+    }
+
+    @IsTest
+    static void testConvert_NullInput() {
+        ZenkakuToHankakuInvocable.Request req = new ZenkakuToHankakuInvocable.Request();
+        req.inputText = null;
+        List<ZenkakuToHankakuInvocable.Response> results =
+            ZenkakuToHankakuInvocable.convert(new List<ZenkakuToHankakuInvocable.Request>{ req });
+        System.assertEquals(null, results[0].outputText);
+    }
+
+    @IsTest
+    static void testConvert_EmptyString() {
+        ZenkakuToHankakuInvocable.Request req = new ZenkakuToHankakuInvocable.Request();
+        req.inputText = '';
+        List<ZenkakuToHankakuInvocable.Response> results =
+            ZenkakuToHankakuInvocable.convert(new List<ZenkakuToHankakuInvocable.Request>{ req });
+        System.assertEquals('', results[0].outputText);
+    }
+
+    @IsTest
+    static void testConvert_AlreadyHalfWidth() {
+        ZenkakuToHankakuInvocable.Request req = new ZenkakuToHankakuInvocable.Request();
+        req.inputText = 'ABC123 !@# ｱｲｳ';
+        List<ZenkakuToHankakuInvocable.Response> results =
+            ZenkakuToHankakuInvocable.convert(new List<ZenkakuToHankakuInvocable.Request>{ req });
+        System.assertEquals('ABC123 !@# ｱｲｳ', results[0].outputText);
+    }
+}
